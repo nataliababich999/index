@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox Lua — IF / AND / OR / NOT</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: #0f0c29;
+    min-height: 100vh;
+    padding: 1.5rem 1rem 3rem;
+    overflow-x: hidden;
+  }
+
+  /* Animated starfield */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(120,40,200,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(200,64,26,0.12) 0%, transparent 40%),
+      radial-gradient(ellipse at 60% 80%, rgba(26,160,200,0.1) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle var(--d) ease-in-out infinite;
+    opacity: 0;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  .wrap { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #C8401A 0%, #ff6b35 50%, #ff9a3c 100%);
+    border-radius: 24px;
+    padding: 1.5rem 1.5rem 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(200,64,26,0.5), 0 0 60px rgba(255,107,53,0.2);
+    position: relative;
+    overflow: hidden;
+    animation: headerPulse 3s ease-in-out infinite;
+  }
+  @keyframes headerPulse {
+    0%,100% { box-shadow: 0 8px 32px rgba(200,64,26,0.5), 0 0 60px rgba(255,107,53,0.2); }
+    50% { box-shadow: 0 8px 48px rgba(200,64,26,0.7), 0 0 80px rgba(255,107,53,0.35); }
+  }
+  .header::after {
+    content: '🎮';
+    position: absolute;
+    right: 1rem; top: 50%;
+    transform: translateY(-50%);
+    font-size: 56px;
+    opacity: 0.25;
+    animation: floatIcon 4s ease-in-out infinite;
+  }
+  @keyframes floatIcon {
+    0%,100% { transform: translateY(-50%) rotate(-5deg); }
+    50% { transform: translateY(-58%) rotate(5deg); }
+  }
+  .header h1 { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 2px; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .header p { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 600; }
+
+  .progress-bar-bg { background: rgba(255,255,255,0.25); border-radius: 99px; height: 10px; margin-top: 14px; }
+  .progress-bar-fill {
+    background: linear-gradient(90deg, #fff 0%, #ffe8d0 100%);
+    border-radius: 99px; height: 10px;
+    transition: width 0.5s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 0 10px rgba(255,255,255,0.6);
+  }
+  .progress-text { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 6px; font-weight: 700; }
+
+  /* XP bar */
+  .xp-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .xp-label { font-size: 12px; color: rgba(255,255,255,0.9); font-weight: 800; white-space: nowrap; }
+  .xp-bar-bg { flex: 1; background: rgba(255,255,255,0.2); border-radius: 99px; height: 8px; }
+  .xp-bar-fill {
+    background: linear-gradient(90deg, #ffe066, #ffb830);
+    border-radius: 99px; height: 8px;
+    transition: width 0.6s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 0 8px rgba(255,220,60,0.7);
+  }
+
+  /* BLOCK NAV */
+  .block-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+  .block-btn {
+    font-size: 13px; font-weight: 800; padding: 7px 16px;
+    border-radius: 99px; border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
+    cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif;
+    backdrop-filter: blur(8px);
+  }
+  .block-btn:hover { background: rgba(255,255,255,0.15); color: #fff; transform: translateY(-2px); }
+  .block-btn.active {
+    background: linear-gradient(135deg, #C8401A, #ff6b35);
+    color: #fff; border-color: #ff6b35;
+    box-shadow: 0 4px 16px rgba(200,64,26,0.5);
+    transform: translateY(-2px);
+  }
+  .block-btn.done {
+    background: linear-gradient(135deg, #1a7a1a, #2ecc40);
+    color: #fff; border-color: #2ecc40;
+    box-shadow: 0 4px 12px rgba(46,204,64,0.4);
+  }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(12px);
+    animation: cardIn 0.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .q-meta { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .tag {
+    display: inline-block; font-size: 11px; padding: 2px 10px;
+    border-radius: 99px; font-weight: 800;
+  }
+  .tag-mc { background: rgba(200,64,26,0.35); color: #ff9a6c; border: 1px solid rgba(200,64,26,0.5); }
+  .tag-open { background: rgba(26,122,200,0.3); color: #6cb4ff; border: 1px solid rgba(26,122,200,0.5); }
+
+  .q-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #C8401A, #ff6b35);
+    color: #fff; font-size: 13px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(200,64,26,0.5);
+    flex-shrink: 0;
+  }
+
+  .q-text { font-size: 16px; color: #fff; font-weight: 800; line-height: 1.5; margin-bottom: 14px; }
+
+  .q-code {
+    background: rgba(0,0,0,0.45);
+    border-left: 4px solid #ff6b35;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: "Courier New", monospace;
+    font-size: 13px; color: #ffcba4;
+    margin-bottom: 16px;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.7;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+  }
+
+  /* OPTIONS */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    text-align: left; padding: 12px 16px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.07);
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Nunito', sans-serif;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .opt-letter {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .opt-btn:hover:not(:disabled) {
+    border-color: #ff6b35;
+    background: rgba(255,107,53,0.15);
+    transform: translateX(6px);
+    box-shadow: 0 4px 16px rgba(255,107,53,0.2);
+  }
+  .opt-btn:hover:not(:disabled) .opt-letter {
+    background: linear-gradient(135deg, #C8401A, #ff6b35);
+  }
+  .opt-btn.correct {
+    border-color: #2ecc40;
+    background: rgba(46,204,64,0.15);
+    box-shadow: 0 0 20px rgba(46,204,64,0.3);
+    animation: correctPop 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .opt-btn.correct .opt-letter { background: linear-gradient(135deg, #1a7a1a, #2ecc40); }
+  @keyframes correctPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .opt-btn.wrong {
+    border-color: #e74c3c;
+    background: rgba(231,76,60,0.12);
+    animation: shake 0.4s ease;
+  }
+  .opt-btn.wrong .opt-letter { background: linear-gradient(135deg, #a32d2d, #e74c3c); }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .opt-btn:disabled { cursor: default; }
+
+  /* FEEDBACK */
+  .feedback {
+    font-size: 14px; padding: 12px 16px;
+    border-radius: 14px; margin-top: 12px;
+    font-weight: 700; line-height: 1.5;
+    animation: feedIn 0.3s ease;
+  }
+  @keyframes feedIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .feedback.correct {
+    background: rgba(46,204,64,0.15);
+    border: 1.5px solid rgba(46,204,64,0.4);
+    color: #7fff8a;
+  }
+  .feedback.wrong {
+    background: rgba(231,76,60,0.15);
+    border: 1.5px solid rgba(231,76,60,0.4);
+    color: #ff9f9f;
+  }
+  .feedback .hint-box {
+    margin-top: 8px; font-size: 13px; font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.25); border-radius: 10px; padding: 8px 12px;
+  }
+  .feedback.open-saved {
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* OPEN QUESTION */
+  .open-area {
+    width: 100%;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-family: "Courier New", monospace;
+    font-size: 13px; color: #ffcba4;
+    background: rgba(0,0,0,0.3);
+    resize: vertical; min-height: 100px;
+    margin-bottom: 10px; line-height: 1.6;
+  }
+  .open-area:focus { outline: none; border-color: #ff6b35; box-shadow: 0 0 0 3px rgba(255,107,53,0.2); }
+  .open-area::placeholder { color: rgba(255,255,255,0.3); }
+
+  /* NAV */
+  .nav-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-top: 1.25rem; }
+  .nav-btn {
+    padding: 10px 20px; border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08); color: #fff;
+    font-size: 14px; font-weight: 800; cursor: pointer;
+    font-family: 'Nunito', sans-serif; transition: all 0.2s;
+  }
+  .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+  .nav-btn.primary {
+    background: linear-gradient(135deg, #C8401A, #ff6b35);
+    border-color: #ff6b35;
+    box-shadow: 0 4px 16px rgba(200,64,26,0.5);
+  }
+  .nav-btn.primary:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(200,64,26,0.7); transform: translateY(-2px); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn.save-btn {
+    background: linear-gradient(135deg, #1a5fb4, #3584e4);
+    border-color: #3584e4;
+    box-shadow: 0 4px 14px rgba(53,132,228,0.4);
+  }
+
+  /* DOTS */
+  .dots { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    cursor: pointer; transition: all 0.25s;
+    border: 2px solid transparent;
+  }
+  .dot:hover { transform: scale(1.4); }
+
+  /* CONFETTI canvas */
+  #confetti-canvas {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 999;
+  }
+
+  /* RESULT */
+  .result-card {
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 24px; padding: 2.5rem 1.5rem;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    animation: cardIn 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result-trophy { font-size: 64px; margin-bottom: 12px; animation: trophySpin 0.6s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes trophySpin { from { transform: scale(0) rotate(-20deg); } to { transform: scale(1) rotate(0deg); } }
+  .result-score { font-size: 60px; font-weight: 900; background: linear-gradient(135deg, #ff6b35, #ffe066); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .result-label { font-size: 16px; color: rgba(255,255,255,0.7); margin-top: 4px; margin-bottom: 1.5rem; font-weight: 700; }
+  .result-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.5rem; text-align: left; }
+  .rb-card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .rb-title { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; font-weight: 700; }
+  .rb-score { font-size: 20px; font-weight: 900; color: #fff; }
+
+  /* STREAK badge */
+  .streak-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #ff9a3c, #ffb830);
+    color: #7a3800; border-radius: 99px;
+    padding: 3px 12px; font-size: 13px; font-weight: 900;
+    margin-left: 8px;
+    box-shadow: 0 2px 10px rgba(255,184,48,0.5);
+    animation: badgePop 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes badgePop { from { transform: scale(0); } to { transform: scale(1); } }
+
+  /* floating particles on correct */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 22px;
+    animation: flyUp 1s ease forwards;
+    z-index: 998;
+  }
+  @keyframes flyUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-120px) scale(0.5); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+  <div class="header">
+    <h1>🔀 IF / ELSE + AND / OR / NOT</h1>
+    <p>Roblox Lua — natali.codes.kids</p>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="prog-text">0 / 0 питань</div>
+    <div class="xp-row">
+      <span class="xp-label">⚡ XP</span>
+      <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-fill" style="width:0%"></div></div>
+      <span class="xp-label" id="xp-val">0</span>
+    </div>
+  </div>
+  <div class="block-nav" id="block-nav"></div>
+  <div id="quiz-body"></div>
+</div>
+
+<script>
+// ── STARS ──
+(function(){
+  const c = document.getElementById('stars');
+  for(let i=0;i<60;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${1.5+Math.random()*3}s;animation-delay:${Math.random()*3}s;width:${1+Math.random()*3}px;height:${1+Math.random()*3}px;`;
+    c.appendChild(s);
+  }
+})();
+
+// ── CONFETTI ──
+const canvas = document.getElementById('confetti-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+
+let confettiPieces = [];
+function launchConfetti(x, y, count=30){
+  const colors = ['#ff6b35','#ffe066','#2ecc40','#3584e4','#ff69b4','#fff'];
+  for(let i=0;i<count;i++){
+    confettiPieces.push({
+      x, y,
+      vx: (Math.random()-0.5)*10,
+      vy: -(Math.random()*8+4),
+      color: colors[Math.floor(Math.random()*colors.length)],
+      size: 5+Math.random()*6,
+      rot: Math.random()*360,
+      rotV: (Math.random()-0.5)*10,
+      life: 1
+    });
+  }
+}
+function animateConfetti(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  confettiPieces = confettiPieces.filter(p=>p.life>0);
+  confettiPieces.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.3; p.rot+=p.rotV; p.life-=0.018;
+    ctx.save();
+    ctx.globalAlpha=p.life;
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot*Math.PI/180);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+    ctx.restore();
+  });
+  requestAnimationFrame(animateConfetti);
+}
+animateConfetti();
+
+function spawnParticles(x, y){
+  const emojis = ['⭐','✨','🎉','💥','🔥'];
+  for(let i=0;i<4;i++){
+    const el = document.createElement('div');
+    el.className='particle';
+    el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.cssText=`left:${x+Math.random()*60-30}px;top:${y}px;animation-delay:${i*0.08}s`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1200);
+  }
+}
+
+// ── DATA ──
+const L = ["А","Б","В","Г","Д"];
+
+const BLOCKS = [
+  {
+    emoji:"🔀", title:"IF / ELSE / ELSEIF",
+    qs:[
+      { type:"mc", q:"Що виведе цей код якщо hp = 80?",
+        code:'local hp = 80\nif hp > 100 then\n    print("Максимум")\nelseif hp > 50 then\n    print("Норма")\nelse\n    print("Небезпека")\nend',
+        opts:["Максимум","Норма","Небезпека","Нічого"], ans:1,
+        hint:'hp=80 → перша умова false, друга hp>50 — true → "Норма"' },
+      { type:"mc", q:"Яке ключове слово завершує блок if в Lua?",
+        opts:["endif","end","close","finish"], ans:1,
+        hint:'У Lua всі блоки завершуються словом end' },
+      { type:"mc", q:"Скільки разів може зустрітись elseif в одному блоці if?",
+        opts:["Жодного","Один раз","Два рази","Скільки завгодно"], ans:3,
+        hint:'elseif можна писати стільки разів скільки потрібно — обмежень немає' },
+      { type:"mc", q:"Що виведе цей код?",
+        code:'local score = 50\nif score == 100 then\n    print("Перемога")\nend\nprint("Гра завершена")',
+        opts:['Перемога\nГра завершена','Гра завершена','Перемога','Нічого'], ans:1,
+        hint:'score==100 → false, блок if пропускається. print("Гра завершена") виконується завжди' },
+      { type:"mc", q:"Чим відрізняється elseif від окремого if?",
+        code:'-- Варіант 1\nif a then ... elseif b then ... end\n\n-- Варіант 2\nif a then ... end\nif b then ... end',
+        opts:["Нічим — це одне й те саме","У варіанті 1 перевіряється b тільки якщо a = false","У варіанті 2 b перевіряється тільки якщо a = false","elseif швидше"], ans:1,
+        hint:'elseif: якщо a=true — b взагалі не перевіряється. Два if: b перевіряється завжди' },
+      { type:"mc", q:"Що виведе цей код якщо coins = 0?",
+        code:'local coins = 0\nif coins > 10 then\n    print("Багатий")\nelseif coins > 0 then\n    print("Є монети")\nelseif coins == 0 then\n    print("Порожній гаманець")\nelse\n    print("Помилка")\nend',
+        opts:["Багатий","Є монети","Порожній гаманець","Помилка"], ans:2,
+        hint:'coins=0: перші дві умови false, третя coins==0 → true → "Порожній гаманець"' },
+      { type:"mc", q:"Чи виконається блок else якщо жодна умова if/elseif не спрацювала?",
+        opts:["Так, завжди","Ні, ніколи","Тільки якщо написати else = true","Залежить від платформи"], ans:0,
+        hint:'else — «запасний» блок, виконується коли жодна умова вище не була true' },
+      { type:"open", q:"Напиши умову: якщо рівень гравця менше 5 — «Новачок», від 5 до 15 — «Досвідчений», більше 15 — «Майстер»." },
+      { type:"open", q:"Поясни: що станеться якщо в блоці if написати умову яка завжди true? Наведи приклад." },
+      { type:"open", q:"Що означає запис  if isAlive then  — без ==? Коли ця умова спрацює?" },
+    ]
+  },
+  {
+    emoji:"🧠", title:"AND / OR / NOT",
+    qs:[
+      { type:"mc", q:"Коли вираз (a and b) повертає true?",
+        opts:["Коли хоча б одне true","Коли обидва true","Коли a true, b — будь-яке","Завжди"], ans:1,
+        hint:'and = «і те, і те». Результат true тільки якщо ОБА операнди true' },
+      { type:"mc", q:"Коли вираз (a or b) повертає true?",
+        opts:["Тільки коли обидва true","Коли хоча б одне true","Тільки коли обидва false","Завжди"], ans:1,
+        hint:'or = «або». Достатньо щоб хоча б ОДНЕ було true' },
+      { type:"mc", q:"Що поверне цей вираз?",
+        code:'local hasKey = false\nlocal isAdmin = true\nprint(hasKey or isAdmin)',
+        opts:["false","true","nil","Помилку"], ans:1,
+        hint:'false or true → true (хоча б одне true)' },
+      { type:"mc", q:"Що поверне цей вираз?",
+        code:'local hasKey = false\nlocal isAdmin = true\nprint(hasKey and isAdmin)',
+        opts:["false","true","nil","Помилку"], ans:0,
+        hint:'false and true → false (обидва мають бути true)' },
+      { type:"mc", q:"Що робить оператор not?",
+        opts:["Повертає суму двох значень","Перевертає булеве значення: true→false, false→true","Порівнює два значення","Зупиняє скрипт"], ans:1,
+        hint:'not true → false, not false → true. Логічне заперечення' },
+      { type:"mc", q:"Який результат у виразу  not (5 > 3)?",
+        opts:["true","false","nil","5 > 3"], ans:1,
+        hint:'5 > 3 = true, not true = false' },
+      { type:"mc", q:"Яка умова пропустить гравця якщо він має ключ АБО є адміністратором?",
+        code:'local hasKey = false\nlocal isAdmin = true',
+        opts:["if hasKey and isAdmin then","if hasKey or isAdmin then","if not hasKey then","if hasKey == isAdmin then"], ans:1,
+        hint:'АБО = or. Достатньо одного з двох — ключа або прав адміна' },
+      { type:"mc", q:"Що виведе цей код?",
+        code:'local isDead = false\nlocal hasShield = true\n\nif not isDead and hasShield then\n    print("Захищений")\nelse\n    print("Вразливий")\nend',
+        opts:["Захищений","Вразливий","Нічого","Помилку"], ans:0,
+        hint:'not isDead = not false = true. true and true = true → "Захищений"' },
+      { type:"mc", q:"Як переписати умову  not (score == 0)  без оператора not?",
+        opts:["score == 0","score ~= 0","score > 0 and score < 0","score = not 0"], ans:1,
+        hint:'~= це «не дорівнює» в Lua. score ~= 0 означає те саме що not (score == 0)' },
+      { type:"mc", q:"Що виведе код якщо level = 3 і hasSword = false?",
+        code:'local level = 3\nlocal hasSword = false\n\nif level >= 5 and hasSword then\n    print("Готовий до бою")\nelseif level >= 5 or hasSword then\n    print("Частково готовий")\nelse\n    print("Не готовий")\nend',
+        opts:["Готовий до бою","Частково готовий","Не готовий","Помилку"], ans:2,
+        hint:'3>=5 and false → false. 3>=5 or false → false. Виконується else → "Не готовий"' },
+      { type:"open", q:"Напиши умову: гравець живий (isAlive) І має більше 0 монет (coins). Якщо обидва — «Можна купити», інакше — «Недостатньо умов»." },
+      { type:"open", q:"Поясни різницю між and і or. Наведи по одному прикладу з гри для кожного." },
+      { type:"open", q:"Коли корисний оператор not? Придумай ситуацію у грі і напиши умову з ним." },
+    ]
+  },
+  {
+    emoji:"⚡", title:"Комбо-завдання",
+    qs:[
+      { type:"mc", q:"Що виведе цей код?",
+        code:'local x = 10\nlocal y = 20\n\nif x > 5 and y > 15 then\n    print("Обидва великі")\nelseif x > 5 or y > 15 then\n    print("Хоча б один великий")\nelse\n    print("Малі")\nend',
+        opts:["Обидва великі","Хоча б один великий","Малі","Помилку"], ans:0,
+        hint:'x=10>5 true, y=20>15 true. true and true = true → перша умова → "Обидва великі"' },
+      { type:"mc", q:"Гравець може зайти якщо: він НЕ ворог і (має квиток або є VIP). Яка умова правильна?",
+        code:'local isEnemy=false\nlocal hasTicket=false\nlocal isVIP=true',
+        opts:["if not isEnemy and (hasTicket or isVIP) then","if isEnemy or hasTicket and isVIP then","if not isEnemy or hasTicket or isVIP then","if not (isEnemy and hasTicket) then"], ans:0,
+        hint:'НЕ ворог = not isEnemy. І = and. (квиток АБО VIP) = (hasTicket or isVIP)' },
+      { type:"mc", q:"Яка умова перевіряє що гравець саме на 5-му рівні?",
+        opts:["if level > 5 and level < 5 then","if level == 5 then","if level ~= 5 then","if level >= 5 or level <= 5 then"], ans:1,
+        hint:'== перевіряє точну рівність. level == 5 спрацює тільки якщо level рівно 5' },
+      { type:"mc", q:"Що виведе цей код якщо a=true, b=false, c=true?",
+        code:'local a=true\nlocal b=false\nlocal c=true\n\nif a and not b and c then\n    print("Так")\nelse\n    print("Ні")\nend',
+        opts:["Так","Ні","Помилку","Нічого"], ans:0,
+        hint:'not b = not false = true. true and true and true = true → "Так"' },
+      { type:"mc", q:"Замок відкривається якщо: (правильний код АБО аварійний ключ) І немає тривоги. Яка умова?",
+        opts:["if correctCode or emergencyKey then","if (correctCode or emergencyKey) and not alarm then","if correctCode and emergencyKey and not alarm then","if not alarm or correctCode or emergencyKey then"], ans:1,
+        hint:'(код АБО ключ) = (correctCode or emergencyKey). І не тривога = and not alarm' },
+      { type:"open", q:"Напиши скрипт: якщо гравець живий, має більше 50 монет і не в зоні небезпеки — дати нагороду. Інакше — вивести причину відмови." },
+      { type:"open", q:"Знайди помилку в коді і поясни що не так:\n\nlocal hp = 80\nif hp = 100 then\n    print(\"Повне здоров'я\")\nelseif hp > 50\n    print(\"Норма\")\nend" },
+      { type:"open", q:"Придумай свою задачу для гри з if/elseif/else і хоча б одним логічним оператором. Запиши умову і код розв'язку." },
+    ]
+  }
+];
+
+let state = { blockIdx:0, qIdx:0, answered:{}, openTexts:{}, xp:0, streak:0 };
+const XP_PER_CORRECT = 10;
+const MAX_XP = BLOCKS.reduce((s,b)=>s+b.qs.filter(q=>q.type==='mc').length,0)*XP_PER_CORRECT;
+
+function key(b,q){ return b+"-"+q; }
+function flatTotal(){ return BLOCKS.reduce((s,b)=>s+b.qs.length,0); }
+function countAnswered(){
+  return Object.keys(state.answered).length +
+    Object.values(state.openTexts).filter(v=>v&&v.trim()).length;
+}
+
+function render(){ renderBlockNav(); renderBody(); updateProgress(); }
+
+function updateProgress(){
+  const done = countAnswered(), total = flatTotal();
+  document.getElementById("prog-fill").style.width = Math.round(done/total*100)+"%";
+  document.getElementById("prog-text").textContent = done+" / "+total+" питань";
+  document.getElementById("xp-fill").style.width = Math.min(100,Math.round(state.xp/MAX_XP*100))+"%";
+  document.getElementById("xp-val").textContent = state.xp;
+}
+
+function renderBlockNav(){
+  const nav = document.getElementById("block-nav");
+  nav.innerHTML = "";
+  BLOCKS.forEach((b,i)=>{
+    const allDone = b.qs.every((_,qi)=>{
+      const k=key(i,qi);
+      return state.answered[k]!==undefined||(state.openTexts[k]&&state.openTexts[k].trim());
+    });
+    const btn = document.createElement("button");
+    btn.className = "block-btn"+(i===state.blockIdx?" active":allDone?" done":"");
+    btn.textContent = b.emoji+" "+b.title;
+    btn.onclick = ()=>{ state.blockIdx=i; state.qIdx=0; render(); };
+    nav.appendChild(btn);
+  });
+}
+
+function renderBody(){
+  const body = document.getElementById("quiz-body");
+  const block = BLOCKS[state.blockIdx];
+  const q = block.qs[state.qIdx];
+  const k = key(state.blockIdx, state.qIdx);
+  const isAnswered = state.answered[k] !== undefined;
+  const hasSaved = state.openTexts[k] && state.openTexts[k].trim();
+  body.innerHTML = "";
+
+  const card = document.createElement("div");
+  card.className = "question-card";
+
+  // Meta
+  const meta = document.createElement("div");
+  meta.className = "q-meta";
+  const num = document.createElement("div");
+  num.className = "q-num";
+  num.textContent = state.qIdx+1;
+  const tag = document.createElement("span");
+  tag.className = "tag "+(q.type==="mc"?"tag-mc":"tag-open");
+  tag.textContent = q.type==="mc" ? "🎯 тест" : "✏️ відкрите";
+  meta.appendChild(num);
+  meta.appendChild(document.createTextNode(block.emoji+" "+block.title+"  •  "+( state.qIdx+1)+" / "+block.qs.length+"  "));
+  meta.appendChild(tag);
+  if(state.streak >= 2){
+    const sb = document.createElement("span");
+    sb.className = "streak-badge";
+    sb.textContent = "🔥 "+state.streak+" поспіль!";
+    meta.appendChild(sb);
+  }
+  card.appendChild(meta);
+
+  const qText = document.createElement("div");
+  qText.className = "q-text";
+  qText.textContent = q.q;
+  card.appendChild(qText);
+
+  if(q.code){
+    const pre = document.createElement("pre");
+    pre.className = "q-code";
+    pre.textContent = q.code;
+    card.appendChild(pre);
+  }
+
+  if(q.type==="mc"){
+    const opts = document.createElement("div");
+    opts.className = "options";
+    q.opts.forEach((opt,i)=>{
+      const btn = document.createElement("button");
+      btn.className = "opt-btn";
+      const letter = document.createElement("span");
+      letter.className = "opt-letter";
+      letter.textContent = L[i];
+      btn.appendChild(letter);
+      btn.appendChild(document.createTextNode(opt));
+      if(isAnswered){
+        btn.disabled = true;
+        if(i===q.ans) btn.classList.add("correct");
+        else if(i===state.answered[k]) btn.classList.add("wrong");
+      }
+      btn.onclick = (e)=>{
+        const wasAnswered = state.answered[k] !== undefined;
+        if(wasAnswered) return;
+        state.answered[k] = i;
+        const correct = i===q.ans;
+        if(correct){
+          state.xp += XP_PER_CORRECT;
+          state.streak++;
+          const rect = btn.getBoundingClientRect();
+          launchConfetti(rect.left+rect.width/2, rect.top, 18);
+          spawnParticles(rect.left+rect.width/2, rect.top);
+        } else {
+          state.streak = 0;
+        }
+        render();
+      };
+      opts.appendChild(btn);
+    });
+    card.appendChild(opts);
+
+    if(isAnswered){
+      const fb = document.createElement("div");
+      fb.className = "feedback "+(state.answered[k]===q.ans?"correct":"wrong");
+      if(state.answered[k]===q.ans){
+        fb.innerHTML = "✅ Правильно! +"+XP_PER_CORRECT+" XP";
+      } else {
+        fb.innerHTML = "❌ Неправильно. Правильна відповідь: <strong>"+L[q.ans]+") "+q.opts[q.ans]+"</strong>";
+      }
+      if(q.hint){
+        const hb = document.createElement("div");
+        hb.className = "hint-box";
+        hb.textContent = "💡 "+q.hint;
+        fb.appendChild(hb);
+      }
+      card.appendChild(fb);
+    }
+  } else {
+    const ta = document.createElement("textarea");
+    ta.className = "open-area";
+    ta.placeholder = "Напиши свій код або відповідь тут...";
+    ta.value = state.openTexts[k] || "";
+    ta.oninput = ()=>{ state.openTexts[k]=ta.value; updateProgress(); };
+    card.appendChild(ta);
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "nav-btn save-btn";
+    saveBtn.textContent = hasSaved ? "✓ Збережено" : "💾 Зберегти відповідь";
+    saveBtn.onclick = ()=>{ state.openTexts[k]=ta.value||" "; render(); };
+    card.appendChild(saveBtn);
+
+    if(hasSaved){
+      const fb = document.createElement("div");
+      fb.className = "feedback open-saved";
+      fb.textContent = "Відповідь збережено. Переходь до наступного питання 👉";
+      card.appendChild(fb);
+    }
+  }
+
+  body.appendChild(card);
+
+  // Nav
+  const nav = document.createElement("div");
+  nav.className = "nav-row";
+
+  const prev = document.createElement("button");
+  prev.className = "nav-btn";
+  prev.textContent = "← Назад";
+  prev.disabled = state.qIdx===0;
+  prev.onclick = ()=>{ state.qIdx--; render(); };
+
+  const dotsDiv = document.createElement("div");
+  dotsDiv.className = "dots";
+  block.qs.forEach((_,i)=>{
+    const dk = key(state.blockIdx,i);
+    const done = state.answered[dk]!==undefined||(state.openTexts[dk]&&state.openTexts[dk].trim());
+    const d = document.createElement("div");
+    d.className = "dot";
+    d.style.cssText = `background:${i===state.qIdx?"#C8401A":done?"#2ecc40":"rgba(255,255,255,0.25)"};border-color:${i===state.qIdx?"#ff6b35":"transparent"};`;
+    d.title = "Питання "+(i+1);
+    d.onclick = ()=>{ state.qIdx=i; render(); };
+    dotsDiv.appendChild(d);
+  });
+
+  const isLast = state.qIdx===block.qs.length-1;
+  const next = document.createElement("button");
+  next.className = "nav-btn primary";
+  next.textContent = isLast ? "Результат блоку 🏆" : "Далі →";
+  next.onclick = ()=>{ if(!isLast){ state.qIdx++; render(); } else showBlockResult(); };
+
+  nav.appendChild(prev);
+  nav.appendChild(dotsDiv);
+  nav.appendChild(next);
+  body.appendChild(nav);
+}
+
+function showBlockResult(){
+  const body = document.getElementById("quiz-body");
+  const block = BLOCKS[state.blockIdx];
+  const mcQs = block.qs.map((q,qi)=>({q,qi})).filter(x=>x.q.type==="mc");
+  const correct = mcQs.filter(({q,qi})=>state.answered[key(state.blockIdx,qi)]===q.ans).length;
+  const pct = Math.round(correct/mcQs.length*100);
+
+  body.innerHTML = "";
+  launchConfetti(window.innerWidth/2, window.innerHeight/3, 50);
+
+  const card = document.createElement("div");
+  card.className = "result-card";
+  const trophy = pct===100?"🏆":pct>=70?"🥈":"💪";
+  card.innerHTML = `<div class="result-trophy">${trophy}</div>
+    <div class="result-score">${correct}/${mcQs.length}</div>
+    <div class="result-label">${block.emoji} ${block.title} — ${pct}% правильно</div>`;
+
+  const btns = document.createElement("div");
+  btns.style.cssText="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:1.25rem;";
+
+  if(state.blockIdx<BLOCKS.length-1){
+    const nb = document.createElement("button");
+    nb.className="nav-btn primary";
+    nb.textContent="Наступний блок 🚀";
+    nb.onclick=()=>{ state.blockIdx++; state.qIdx=0; render(); };
+    btns.appendChild(nb);
+  }
+  const rb = document.createElement("button");
+  rb.className="nav-btn";
+  rb.textContent="Переглянути ще раз";
+  rb.onclick=()=>{ state.qIdx=0; render(); };
+  btns.appendChild(rb);
+  if(state.blockIdx===BLOCKS.length-1){
+    const fin = document.createElement("button");
+    fin.className="nav-btn primary";
+    fin.textContent="Фінальний результат 🎉";
+    fin.onclick=showFinalResult;
+    btns.appendChild(fin);
+  }
+  card.appendChild(btns);
+  body.appendChild(card);
+}
+
+function showFinalResult(){
+  const body = document.getElementById("quiz-body");
+  const allMc = BLOCKS.flatMap((b,bi)=>b.qs.map((q,qi)=>({q,bi,qi})).filter(x=>x.q.type==="mc"));
+  const correct = allMc.filter(({q,bi,qi})=>state.answered[key(bi,qi)]===q.ans).length;
+  const pct = Math.round(correct/allMc.length*100);
+
+  launchConfetti(window.innerWidth/2, window.innerHeight/3, 80);
+
+  body.innerHTML="";
+  const card = document.createElement("div");
+  card.className="result-card";
+  const trophy = pct===100?"🏆":pct>=80?"🥇":pct>=60?"🥈":"💪";
+  const msg = pct===100?"Абсолютний результат! Ти — Lua майстер! 🔥":pct>=80?"Чудово! Ти дуже добре знаєш тему! 👏":pct>=60?"Непогано! Ще трохи практики — і буде ідеально 💪":"Практикуйся ще — і все вийде! 🚀";
+
+  card.innerHTML=`<div class="result-trophy">${trophy}</div>
+    <div class="result-score">${correct}/${allMc.length}</div>
+    <div class="result-label">${msg}</div>
+    <div style="font-size:20px;font-weight:800;color:#ffe066;margin-bottom:1.5rem;">⚡ Зібрано XP: ${state.xp}</div>`;
+
+  const grid = document.createElement("div");
+  grid.className="result-blocks";
+  BLOCKS.forEach((b,bi)=>{
+    const mc=b.qs.map((q,qi)=>({q,qi})).filter(x=>x.q.type==="mc");
+    const c=mc.filter(({q,qi})=>state.answered[key(bi,qi)]===q.ans).length;
+    const p=mc.length>0?Math.round(c/mc.length*100):100;
+    const rb=document.createElement("div");
+    rb.className="rb-card";
+    rb.innerHTML=`<div class="rb-title">${b.emoji} ${b.title}</div>
+      <div class="rb-score">${c}/${mc.length} <span style="font-size:13px;color:rgba(255,255,255,0.4)">(${p}%)</span></div>`;
+    grid.appendChild(rb);
+  });
+  card.appendChild(grid);
+
+  const resetBtn=document.createElement("button");
+  resetBtn.className="nav-btn primary";
+  resetBtn.style.marginTop="1rem";
+  resetBtn.textContent="🔄 Почати спочатку";
+  resetBtn.onclick=()=>{ state={blockIdx:0,qIdx:0,answered:{},openTexts:{},xp:0,streak:0}; render(); };
+  card.appendChild(resetBtn);
+  body.appendChild(card);
+}
+
+render();
+</script>
+</body>
+</html>
