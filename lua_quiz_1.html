@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тест: print() та Змінні в Lua</title>
+<style>
+  :root{
+    --bg: #0b1220;
+    --panel: #111b30;
+    --panel2: #16223d;
+    --border: #223252;
+    --text: #eaf0fb;
+    --muted: #93a4c3;
+    --blue: #3b82f6;
+    --blue-dark: #1e40af;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #fbbf24;
+    --purple: #8b5cf6;
+    --code-bg: #0a1120;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background: radial-gradient(1200px 800px at 20% -10%, #16244a 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+  header.top{
+    display:flex; align-items:center; gap:12px; justify-content:space-between;
+    margin-bottom: 18px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand .logo{
+    width:38px; height:38px; border-radius:10px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:18px; color:white;
+    flex-shrink:0;
+  }
+  .brand .titles{ line-height:1.15; }
+  .brand .titles .t1{ font-size:12px; color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+  .brand .titles .t2{ font-size:16px; font-weight:800; }
+
+  .card{
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  /* START SCREEN */
+  .start h1{
+    font-size: 26px;
+    margin: 6px 0 8px;
+    background: linear-gradient(90deg, #fff, #9cc2ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .start p.lead{
+    color: var(--muted);
+    font-size: 15px;
+    line-height:1.5;
+    margin: 0 0 18px;
+  }
+  .topics{
+    display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    margin-bottom: 20px;
+  }
+  .topic{
+    background: var(--code-bg);
+    border:1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+  }
+  .topic b{ display:block; color:#bcd3ff; font-size:13px; margin-bottom:2px;}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:none; border-radius: 12px;
+    padding: 14px 22px;
+    font-size: 16px; font-weight: 800;
+    cursor:pointer;
+    background: linear-gradient(135deg, var(--blue), #6d5cf5);
+    color:white;
+    box-shadow: 0 8px 20px rgba(59,130,246,0.35);
+    transition: transform .12s ease, box-shadow .12s ease;
+    width: 100%;
+  }
+  .btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 26px rgba(59,130,246,0.45); }
+  .btn:active{ transform: translateY(0px) scale(.99); }
+  .btn.secondary{
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    box-shadow:none;
+  }
+
+  /* QUIZ SCREEN */
+  .progress-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 10px; font-size: 13px; color: var(--muted); font-weight:700;
+  }
+  .progress-bar{
+    height: 10px; background: var(--code-bg); border-radius: 999px; overflow:hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .progress-fill{
+    height:100%; width:0%;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    transition: width .3s ease;
+  }
+  .score-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    background: var(--code-bg); border:1px solid var(--border);
+    padding: 4px 10px; border-radius: 999px; font-size:12.5px; font-weight:800; color:var(--yellow);
+  }
+  .q-card-tag{
+    display:inline-block;
+    font-size: 11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+    color: #9cc2ff;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.35);
+    padding: 3px 9px; border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .question{
+    font-size: 18px; font-weight: 800; line-height:1.4; margin: 0 0 6px;
+  }
+  .code-box{
+    background: var(--code-bg);
+    border:1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 14.5px;
+    color: #cde3ff;
+    margin: 10px 0 18px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .options{
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .option{
+    text-align:left;
+    display:flex; align-items:center; gap:12px;
+    background: var(--code-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-size: 15px;
+    color: var(--text);
+    cursor:pointer;
+    font-family: inherit;
+    transition: border-color .12s ease, background .12s ease, transform .08s ease;
+  }
+  .option .letter{
+    flex-shrink:0;
+    width: 26px; height:26px; border-radius:8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 12.5px; font-weight:800; color: var(--muted);
+  }
+  .option:hover:not(.disabled){
+    border-color: var(--blue);
+    background: rgba(59,130,246,0.08);
+  }
+  .option.correct{
+    border-color: var(--green);
+    background: rgba(34,197,94,0.14);
+  }
+  .option.correct .letter{ background: var(--green); color:#06240f; border-color: var(--green); }
+  .option.incorrect{
+    border-color: var(--red);
+    background: rgba(239,68,68,0.14);
+  }
+  .option.incorrect .letter{ background: var(--red); color:#2b0a0a; border-color: var(--red); }
+  .option.disabled{ cursor: default; }
+  .option.dim{ opacity:.55; }
+
+  .feedback{
+    margin-top: 16px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height:1.5;
+    display:none;
+  }
+  .feedback.show{ display:block; animation: fadein .25s ease; }
+  .feedback.ok{ background: rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.4); color:#c8f7d8; }
+  .feedback.bad{ background: rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#ffd7d7; }
+  .feedback b{ display:block; margin-bottom:3px; font-size:14.5px; }
+  @keyframes fadein{ from{opacity:0; transform: translateY(4px);} to{opacity:1; transform: translateY(0);} }
+
+  .nav-row{
+    margin-top: 20px; display:flex; justify-content:flex-end;
+  }
+  .nav-row .btn{ width:auto; padding: 12px 26px; }
+
+  /* RESULTS SCREEN */
+  .result-hero{ text-align:center; padding: 8px 0 4px; }
+  .result-emoji{ font-size: 54px; line-height:1; margin-bottom: 6px; }
+  .result-score{
+    font-size: 44px; font-weight: 900;
+    background: linear-gradient(90deg, #fff, #9cc2ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    margin: 4px 0 2px;
+  }
+  .result-sub{ color: var(--muted); font-size: 14.5px; margin-bottom: 4px; }
+  .result-msg{
+    margin: 14px 0 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    text-align:center;
+    font-weight:700;
+  }
+  .result-msg.great{ background: rgba(34,197,94,0.14); border:1px solid rgba(34,197,94,0.4); color:#c8f7d8; }
+  .result-msg.good{ background: rgba(59,130,246,0.14); border:1px solid rgba(59,130,246,0.4); color:#cfe0ff; }
+  .result-msg.retry{ background: rgba(251,191,36,0.14); border:1px solid rgba(251,191,36,0.4); color:#ffe9b8; }
+
+  .review-item{
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 13.5px;
+  }
+  .review-item .rq{ font-weight:800; margin-bottom:6px; display:flex; gap:8px; align-items:flex-start; }
+  .review-item .rq .mark{ flex-shrink:0; font-size:15px; }
+  .review-item .ra{ color: var(--muted); margin-left: 23px; }
+  .review-item .ra .yours{ color:#ffb4b4; }
+  .review-item .ra .right{ color:#9ef0bd; }
+
+  .btn-row{ display:flex; gap:10px; margin-top: 18px; }
+  .btn-row .btn{ flex:1; }
+
+  footer.foot{
+    text-align:center; color: var(--muted); font-size: 12px; margin-top: 22px;
+  }
+
+  .hidden{ display:none !important; }
+
+  @media (max-width: 480px){
+    .topics{ grid-template-columns: 1fr; }
+    .question{ font-size: 16.5px; }
+    .result-score{ font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">Lua</div>
+      <div class="titles">
+        <div class="t1">Roblox Studio</div>
+        <div class="t2">Тест з програмування</div>
+      </div>
+    </div>
+    <div class="score-pill" id="liveScore">⭐ 0</div>
+  </header>
+
+  <!-- START SCREEN -->
+  <div class="card start" id="screenStart">
+    <h1>print() та Змінні в Lua 🎮</h1>
+    <p class="lead">
+      Перевір, як добре ти знаєш команду <b>print()</b>, конкатенацію рядків та змінні в Lua.
+      Тест складається з 16 запитань з варіантами відповідей. Обирай правильну відповідь і одразу дізнавайся результат!
+    </p>
+    <div class="topics">
+      <div class="topic"><b>🖨️ print()</b>Виведення значень в Output</div>
+      <div class="topic"><b>🔗 Конкатенація</b>Об'єднання рядків через ..</div>
+      <div class="topic"><b>🔢 Типи даних</b>number, boolean, string</div>
+      <div class="topic"><b>📦 Змінні</b>local та глобальні змінні</div>
+    </div>
+    <button class="btn" id="btnStart">🚀 Почати тест</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="card hidden" id="screenQuiz">
+    <div class="progress-row">
+      <span id="progressLabel">Запитання 1 з 16</span>
+      <span class="score-pill" id="scoreDuring">⭐ 0 / 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="q-card-tag" id="qTag">PRINT()</div>
+    <div class="question" id="qText">Запитання</div>
+    <div class="code-box hidden" id="qCode"></div>
+
+    <div class="options" id="qOptions"></div>
+
+    <div class="feedback" id="qFeedback">
+      <b id="fbTitle"></b>
+      <span id="fbText"></span>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn hidden" id="btnNext">Далі →</button>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="card hidden" id="screenResult">
+    <div class="result-hero">
+      <div class="result-emoji" id="resultEmoji">🏆</div>
+      <div class="result-score" id="resultScore">0 / 16</div>
+      <div class="result-sub" id="resultPercent">0%</div>
+    </div>
+    <div class="result-msg" id="resultMsg"></div>
+
+    <div id="reviewList"></div>
+
+    <div class="btn-row">
+      <button class="btn secondary" id="btnReview">📋 Переглянути відповіді</button>
+      <button class="btn" id="btnRetry">🔁 Спробувати знову</button>
+    </div>
+  </div>
+
+  <footer class="foot">Lua в Roblox Studio · Картки 5–6: print() і змінні</footer>
+</div>
+
+<script>
+(function(){
+  const questions = [
+    {
+      tag: "PRINT()",
+      q: "Для чого потрібна команда print()?",
+      code: null,
+      options: [
+        "Щоб виводити текст, числа або результати виразів у вікно Output",
+        "Щоб видаляти змінні зі скрипту",
+        "Щоб створювати нову гру в Roblox Studio",
+        "Щоб зупиняти скрипт назавжди"
+      ],
+      correct: 0,
+      exp: "print() виводить значення в Output — це потрібно для перевірки роботи скриптів та пошуку помилок."
+    },
+    {
+      tag: "PRINT()",
+      q: "Що виведе цей код в Output?",
+      code: 'print("Привіт, світ!")',
+      options: ["Привіт, світ!", '"Привіт, світ!"', "print", "Помилка"],
+      correct: 0,
+      exp: "print() виводить текст без лапок — лапки потрібні лише в самому коді, щоб позначити рядок."
+    },
+    {
+      tag: "PRINT()",
+      q: "Що виведе цей код в Output?",
+      code: "print(123)",
+      options: ["\"123\"", "123", "сто двадцять три", "Помилка, бо немає лапок"],
+      correct: 1,
+      exp: "Числа можна виводити без лапок — print() просто покаже число 123."
+    },
+    {
+      tag: "PRINT()",
+      q: "Скільки значень можна передати в print() за один раз?",
+      code: null,
+      options: [
+        "Тільки одне",
+        "Максимум два",
+        "Кілька значень через кому",
+        "Print() взагалі не приймає значень"
+      ],
+      correct: 2,
+      exp: "Можна передавати кілька значень через кому, наприклад: print(\"X:\", 10, \"Y:\", 20). Lua автоматично поставить пробіл між ними."
+    },
+    {
+      tag: "PRINT()",
+      q: "Якщо в Output нічого не з'явилося після запуску скрипту, це означає...",
+      code: null,
+      options: [
+        "Все працює ідеально",
+        "Скрипт не запустився або сталася помилка до print()",
+        "Roblox Studio зламався",
+        "Потрібно видалити print()"
+      ],
+      correct: 1,
+      exp: "Порожній Output — це сигнал, що щось пішло не так до виклику print(). Варто перевірити код на помилки."
+    },
+    {
+      tag: "КОНКАТЕНАЦІЯ",
+      q: "Що таке конкатенація рядків?",
+      code: null,
+      options: [
+        "Видалення частини тексту",
+        "Об'єднання рядків у один текст",
+        "Порівняння двох чисел",
+        "Створення нової змінної"
+      ],
+      correct: 1,
+      exp: "Конкатенація — це об'єднання рядків у один текст, наприклад для повідомлень чи виведення очок."
+    },
+    {
+      tag: "КОНКАТЕНАЦІЯ",
+      q: "Яким оператором об'єднують рядки в Lua?",
+      code: null,
+      options: ["+ (плюс)", ".. (дві крапки)", "& (амперсанд)", ", (кома)"],
+      correct: 1,
+      exp: "У Lua рядки об'єднуються оператором .. (дві крапки). Оператор + для цього не підходить."
+    },
+    {
+      tag: "КОНКАТЕНАЦІЯ",
+      q: "Чи можна написати так: print(\"Привіт\" + \"світ\")?",
+      code: null,
+      options: [
+        "Так, це правильний спосіб об'єднання",
+        "Ні, для об'єднання рядків потрібен оператор .. а не +",
+        "Так, але тільки для чисел",
+        "Ні, print() взагалі не працює з рядками"
+      ],
+      correct: 1,
+      exp: "Оператором + не можна додавати рядки — це поширена помилка. Потрібно використовувати .. (дві крапки)."
+    },
+    {
+      tag: "КОНКАТЕНАЦІЯ",
+      q: "Що виведе цей код в Output?",
+      code: 'print("Рахунок: " .. 150)',
+      options: ["Рахунок: 150", "Помилка, бо 150 не в лапках", "Рахунок:150150", "150 Рахунок:"],
+      correct: 0,
+      exp: "Lua автоматично перетворює число 150 в текст, тому вийде рядок «Рахунок: 150»."
+    },
+    {
+      tag: "КОНКАТЕНАЦІЯ",
+      q: "Яким буде тип результату після об'єднання рядка і числа оператором ..?",
+      code: null,
+      options: ["number", "boolean", "string (рядок)", "тип не визначений"],
+      correct: 2,
+      exp: "Результат конкатенації завжди буде рядком (string), навіть якщо ти об'єднував число."
+    },
+    {
+      tag: "ЗМІННІ",
+      q: "Що таке змінна в Lua?",
+      code: null,
+      options: [
+        "Команда для виведення тексту",
+        "Ім'я, яке зберігає значення",
+        "Тип помилки в коді",
+        "Назва скрипту"
+      ],
+      correct: 1,
+      exp: "Змінна — це ім'я, яке зберігає значення, і це значення можна змінювати під час виконання програми."
+    },
+    {
+      tag: "ЗМІННІ",
+      q: "Скільки основних типів значень є у Lua (за темою)?",
+      code: null,
+      options: ["2", "3: number, boolean, string", "5", "10"],
+      correct: 1,
+      exp: "Три основні типи: числові (number), булеві (boolean, true/false) та текстові (string)."
+    },
+    {
+      tag: "ЗМІННІ",
+      q: "До якого типу належить значення true?",
+      code: null,
+      options: ["number", "string", "boolean", "жодного з перелічених"],
+      correct: 2,
+      exp: "true та false — це булевий тип (boolean). Він має лише два можливі значення."
+    },
+    {
+      tag: "ЗМІННІ",
+      q: "Як правильно створити локальну змінну?",
+      code: null,
+      options: [
+        "змінна ім'я = значення",
+        "local ім'я = значення",
+        "var ім'я = значення",
+        "global ім'я = значення"
+      ],
+      correct: 1,
+      exp: "Локальна змінна створюється зі словом local, наприклад: local рахунок = 150."
+    },
+    {
+      tag: "ЗМІННІ",
+      q: "Чим локальна змінна відрізняється від глобальної?",
+      code: null,
+      options: [
+        "Локальна доступна лише в блоці/скрипті, де створена; глобальна — в усьому скрипті і навіть в інших скриптах",
+        "Локальна доступна всюди, а глобальна — ніде",
+        "Різниці немає, це одне і те саме",
+        "Глобальна змінна швидша, тому її завжди краще використовувати"
+      ],
+      correct: 0,
+      exp: "Локальна змінна (з local) безпечніша й доступна тільки там, де створена. Глобальна видима скрізь, і це ризиковано — легко випадково щось зламати."
+    },
+    {
+      tag: "ЗМІННІ",
+      q: "Чи чутлива Lua до регістру літер у назвах змінних?",
+      code: null,
+      options: [
+        "Так, MyVar і myvar — це різні змінні",
+        "Ні, регістр не має значення",
+        "Тільки для чисел",
+        "Тільки у великих проєктах"
+      ],
+      correct: 0,
+      exp: "Lua чутлива до регістру: MyVar і myvar Lua вважає двома різними змінними."
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  let answered = false;
+  const userAnswers = new Array(questions.length).fill(null);
+
+  const screenStart = document.getElementById('screenStart');
+  const screenQuiz = document.getElementById('screenQuiz');
+  const screenResult = document.getElementById('screenResult');
+
+  const progressLabel = document.getElementById('progressLabel');
+  const progressFill = document.getElementById('progressFill');
+  const scoreDuring = document.getElementById('scoreDuring');
+  const liveScore = document.getElementById('liveScore');
+
+  const qTag = document.getElementById('qTag');
+  const qText = document.getElementById('qText');
+  const qCode = document.getElementById('qCode');
+  const qOptions = document.getElementById('qOptions');
+  const qFeedback = document.getElementById('qFeedback');
+  const fbTitle = document.getElementById('fbTitle');
+  const fbText = document.getElementById('fbText');
+  const btnNext = document.getElementById('btnNext');
+
+  document.getElementById('btnStart').addEventListener('click', () => {
+    screenStart.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+    renderQuestion();
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', resetQuiz);
+  document.getElementById('btnReview').addEventListener('click', () => {
+    const list = document.getElementById('reviewList');
+    list.classList.toggle('hidden');
+    document.getElementById('btnReview').textContent = list.classList.contains('hidden')
+      ? "📋 Переглянути відповіді" : "🙈 Сховати відповіді";
+  });
+
+  btnNext.addEventListener('click', () => {
+    current++;
+    if (current < questions.length) {
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  });
+
+  function renderQuestion(){
+    answered = false;
+    const q = questions[current];
+    progressLabel.textContent = `Запитання ${current + 1} з ${questions.length}`;
+    progressFill.style.width = `${(current / questions.length) * 100}%`;
+    scoreDuring.textContent = `⭐ ${score} / ${current}`;
+    liveScore.textContent = `⭐ ${score}`;
+
+    qTag.textContent = q.tag;
+    qText.textContent = q.q;
+
+    if (q.code) {
+      qCode.textContent = q.code;
+      qCode.classList.remove('hidden');
+    } else {
+      qCode.classList.add('hidden');
+      qCode.textContent = '';
+    }
+
+    qOptions.innerHTML = '';
+    const letters = ['А', 'Б', 'В', 'Г'];
+    q.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.innerHTML = `<span class="letter">${letters[idx]}</span><span>${opt}</span>`;
+      btn.addEventListener('click', () => selectAnswer(idx, btn));
+      qOptions.appendChild(btn);
+    });
+
+    qFeedback.className = 'feedback';
+    fbTitle.textContent = '';
+    fbText.textContent = '';
+    btnNext.classList.add('hidden');
+  }
+
+  function selectAnswer(idx, btnEl){
+    if (answered) return;
+    answered = true;
+    const q = questions[current];
+    userAnswers[current] = idx;
+    const optionEls = qOptions.querySelectorAll('.option');
+
+    optionEls.forEach((el, i) => {
+      el.classList.add('disabled');
+      if (i === q.correct) el.classList.add('correct');
+      if (i === idx && idx !== q.correct) el.classList.add('incorrect');
+      if (i !== idx && i !== q.correct) el.classList.add('dim');
+    });
+
+    if (idx === q.correct) {
+      score++;
+      qFeedback.className = 'feedback ok show';
+      fbTitle.textContent = '✅ Правильно!';
+    } else {
+      qFeedback.className = 'feedback bad show';
+      fbTitle.textContent = '❌ Не зовсім.';
+    }
+    fbText.textContent = q.exp;
+
+    scoreDuring.textContent = `⭐ ${score} / ${current + 1}`;
+    liveScore.textContent = `⭐ ${score}`;
+
+    btnNext.textContent = (current === questions.length - 1) ? 'Показати результат →' : 'Далі →';
+    btnNext.classList.remove('hidden');
+  }
+
+  function showResults(){
+    screenQuiz.classList.add('hidden');
+    screenResult.classList.remove('hidden');
+    progressFill.style.width = '100%';
+
+    const total = questions.length;
+    const pct = Math.round((score / total) * 100);
+
+    document.getElementById('resultScore').textContent = `${score} / ${total}`;
+    document.getElementById('resultPercent').textContent = `${pct}% правильних відповідей`;
+
+    const emojiEl = document.getElementById('resultEmoji');
+    const msgEl = document.getElementById('resultMsg');
+
+    if (pct >= 85) {
+      emojiEl.textContent = '🏆';
+      msgEl.className = 'result-msg great';
+      msgEl.textContent = 'Чудовий результат! Ти справжній знавець Lua та Roblox Studio! 🎉';
+    } else if (pct >= 60) {
+      emojiEl.textContent = '👍';
+      msgEl.className = 'result-msg good';
+      msgEl.textContent = 'Дуже добре! Ти вже добре розумієш print() і змінні. Ще трохи практики — і буде відмінно!';
+    } else {
+      emojiEl.textContent = '💪';
+      msgEl.className = 'result-msg retry';
+      msgEl.textContent = 'Непогана спроба! Перечитай картки про print() та змінні ще раз і спробуй тест знову.';
+    }
+
+    const reviewList = document.getElementById('reviewList');
+    reviewList.classList.add('hidden');
+    reviewList.innerHTML = '';
+    const letters = ['А', 'Б', 'В', 'Г'];
+
+    questions.forEach((q, i) => {
+      const userIdx = userAnswers[i];
+      const isCorrect = userIdx === q.correct;
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      div.innerHTML = `
+        <div class="rq"><span class="mark">${isCorrect ? '✅' : '❌'}</span><span>${i + 1}. ${q.q}</span></div>
+        <div class="ra">
+          ${isCorrect
+            ? `<span class="right">Твоя відповідь: ${letters[userIdx]}. ${q.options[userIdx]} ✔</span>`
+            : `<span class="yours">Твоя відповідь: ${userIdx !== null ? letters[userIdx] + '. ' + q.options[userIdx] : '—'}</span><br><span class="right">Правильно: ${letters[q.correct]}. ${q.options[q.correct]}</span>`
+          }
+        </div>
+      `;
+      reviewList.appendChild(div);
+    });
+  }
+
+  function resetQuiz(){
+    current = 0;
+    score = 0;
+    answered = false;
+    userAnswers.fill(null);
+    liveScore.textContent = '⭐ 0';
+    screenResult.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+    renderQuestion();
+  }
+})();
+</script>
+</body>
+</html>
